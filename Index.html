@@ -21,11 +21,14 @@
     background:#000;
     -webkit-user-select:none;user-select:none;
     touch-action:none;
+    cursor:auto;
   }
+  body.modal-open{cursor:auto;}
   #canvasContainer{position:fixed;inset:0;}
   #canvasContainer canvas{
     display:block;
     filter:sepia(0.28) saturate(1.15) contrast(1.08) brightness(1.02);
+    cursor:auto;
   }
 
   /* vignette + grain */
@@ -49,6 +52,7 @@
     display:flex;align-items:center;justify-content:center;
     background:radial-gradient(ellipse at center, rgba(40,25,10,0.55) 0%, rgba(10,6,2,0.92) 100%);
     padding:20px;
+    cursor:auto;
   }
   #startScreen{
     background:radial-gradient(ellipse at center, rgba(40,25,10,0.22) 0%, rgba(10,6,2,0.55) 100%);
@@ -1722,6 +1726,30 @@ function updateProximity(){
   });
 }
 
+function releasePointerLock(){
+  if(document.pointerLockElement === renderer.domElement){
+    try{ document.exitPointerLock(); }catch(err){}
+  }
+  document.body.style.cursor = 'auto';
+  renderer.domElement.style.cursor = 'auto';
+}
+
+document.addEventListener('pointerlockchange', function(){
+  if(document.pointerLockElement !== renderer.domElement){
+    document.body.style.cursor = 'auto';
+    renderer.domElement.style.cursor = 'auto';
+  }
+});
+
+function openModalWithPointerReset(){
+  releasePointerLock();
+  document.body.classList.add('modal-open');
+}
+
+function closeModalWithPointerReset(){
+  document.body.classList.remove('modal-open');
+}
+
 function animate(){
   requestAnimationFrame(animate);
   var dt = Math.min(clock.getDelta(), 0.06);
@@ -1786,6 +1814,7 @@ function addScore(n){
 var infoScreen = document.getElementById('infoScreen');
 function openInfo(p){
   state.panelOpen = true;
+  openModalWithPointerReset();
   document.getElementById('infoEyebrow').textContent = 'Punto de interés · ' + (Object.keys(state.visited).length+1) + ' de ' + POIS.length;
   document.getElementById('infoTitle').textContent = p.name;
   document.getElementById('infoText').textContent = p.text;
@@ -1803,6 +1832,7 @@ function openInfo(p){
 document.getElementById('btnCloseInfo').addEventListener('click', function(){
   infoScreen.classList.add('hidden');
   state.panelOpen = false;
+  closeModalWithPointerReset();
 });
 
 /* --- Quiz --- */
@@ -1832,6 +1862,7 @@ function buildShuffledQuiz(){
 
 function openQuiz(){
   state.panelOpen = true;
+  openModalWithPointerReset();
   state.quizIndex = 0;
   state.quizCorrect = 0;
   state.quizSet = buildShuffledQuiz();
@@ -1981,18 +2012,21 @@ function drawSatelliteMap(){
 document.getElementById('btnSatellite').addEventListener('click', function(){
   if(state.panelOpen) return;
   state.panelOpen = true;
+  openModalWithPointerReset();
   drawSatelliteMap();
   satScreen.classList.remove('hidden');
 });
 document.getElementById('btnCloseSat').addEventListener('click', function(){
   satScreen.classList.add('hidden');
   state.panelOpen = false;
+  closeModalWithPointerReset();
 });
 
 /* --- Final screen --- */
 var finalScreen = document.getElementById('finalScreen');
 function showFinal(){
   state.panelOpen = true;
+  openModalWithPointerReset();
   var visitedCount = Object.keys(state.visited).length;
   document.getElementById('finalAuthorLine').textContent =
     state.authorName ? ('Recorrido de ' + state.authorName) : 'Tu recorrido por El Colorado';
@@ -2019,6 +2053,7 @@ document.getElementById('btnFinish').addEventListener('click', function(){
 document.getElementById('btnCloseFinal').addEventListener('click', function(){
   finalScreen.classList.add('hidden');
   state.panelOpen = false;
+  closeModalWithPointerReset();
 });
 document.getElementById('btnRestart').addEventListener('click', function(){
   location.reload();
